@@ -176,11 +176,13 @@ This project is licensed under the [Apache 2.0 License](LICENSE).
 
 Additional resources might include the following:
 
-* [SAS Analytics for IoT](https://www.sas.com/en_us/software/analytics-iot.html)
-* [SAS Visual Data Mining and Machine Learning](https://www.sas.com/en_us/software/visual-data-mining-machine-learning.html)
-* [SAS Event Stream Processing](https://www.sas.com/en_us/software/event-stream-processing.html)
-* [SAS for Developers](https://developer.sas.com/home.html)
-* [SAS Deep Learning Python Interface](https://sassoftware.github.io/python-dlpy/)
-* [SAS Scripting Wrapper for Analytics Transfer](https://sassoftware.github.io/python-swat/)
-* [SAS Communities](https://communities.sas.com/)
+* [General information](https://www.sas.com/en_us/software/analytics-iot.html) about SAS Analytics for IoT
+*	Information about [how to get started](https://support.sas.com/en/software/visual-data-mining-and-machine-learning-support.html) with SAS Visual Data Mining and Machine Learning
+*	An [introduction](https://go.documentation.sas.com/?cdcId=espcdc&cdcVersion=6.2&docsetId=espov&docsetTarget=home.htm&locale=en) to SAS Event Stream Processing
+*	SAS DPPy [API documentation](https://sassoftware.github.io/python-dlpy/)
+*	SAS Scripting Wrapper for Analytics Transfer (SWAT) [API documentation ](https://sassoftware.github.io/python-swat/)
+*	SAS Support Communities [website](https://communities.sas.com/)
+* Guides for more IoT Use Cases may be found on [SAS for Developers website](https://developer.sas.com/guides/iot.html) 
+
+
 
