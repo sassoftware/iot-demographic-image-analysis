@@ -182,7 +182,7 @@ Additional resources might include the following:
 *	SAS DPPy [API documentation](https://sassoftware.github.io/python-dlpy/)
 *	SAS Scripting Wrapper for Analytics Transfer (SWAT) [API documentation ](https://sassoftware.github.io/python-swat/)
 *	SAS Support Communities [website](https://communities.sas.com/)
-* Guides for more IoT Use Cases may be found on [SAS for Developers website](https://developer.sas.com/guides/iot.html) 
+* Guides for more IoT use cases may be found on the [SAS for Developers website](https://developer.sas.com/guides/iot.html) 
 
 
 
