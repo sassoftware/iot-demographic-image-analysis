@@ -4,8 +4,6 @@
 
 In this repository, you'll see how to connect to an RTSP stream of image data is transformed or enhanced in real-time to deliver demographic data.
 
-
-
 ## Overview
 
 This repository will show you how to use two of the products found in SAS Analytics for IoT to train and build a demographic detector which may be used in a retail setting.  
