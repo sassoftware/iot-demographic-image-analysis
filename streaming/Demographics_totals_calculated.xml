@@ -1,0 +1,1434 @@
+<project name="Demographics_totals_calculated" threads="1" pubsub="auto" heartbeat-interval="1">
+  <description><![CDATA[Detect faces from video and determine age, gender, emotional state]]></description>
+  <metadata>
+    <meta id="studioUploadedBy">anonymousUser</meta>
+    <meta id="studioUploaded">1705524591830</meta>
+    <meta id="studioModifiedBy">anonymousUser</meta>
+    <meta id="studioModified">1706735498988</meta>
+    <meta id="layout">{"contquery":{"AnnotateImages":{"x":370,"y":415},"Ready4Grafana":{"x":455,"y":630},"TrackTotals":{"x":175,"y":630},"VideoFromRTSP":{"x":820,"y":50},"agedetection":{"x":820,"y":565},"cropfaces2":{"x":820,"y":415},"emotiondetection":{"x":820,"y":825},"facedetection":{"x":820,"y":295},"genderdetection":{"x":820,"y":710},"readagemodel":{"x":1085,"y":450},"reademotionmodel":{"x":1090,"y":715},"readgendermodel":{"x":1085,"y":585},"readtinyyolo416model":{"x":1095,"y":195},"resized416":{"x":820,"y":175}}}</meta>
+  </metadata>
+  <contqueries>
+    <contquery name="contquery" timing-threshold="50">
+      <windows>
+        <window-source index="pi_EMPTY" insert-only="true" pubsub="true" name="VideoFromRTSP">
+          <description><![CDATA[Read RTSP stream as BLOB.]]></description>
+          <schema>
+            <fields>
+              <field name="id" type="int64" key="true"/>
+              <field name="_image_orig_" type="blob"/>
+            </fields>
+          </schema>
+          <connectors>
+            <connector class="videocap" name="ReadRTSP">
+              <properties>
+                <property name="type"><![CDATA[pub]]></property>
+                <property name="inputrate"><![CDATA[30]]></property>
+                <property name="publishrate"><![CDATA[1]]></property>
+                <property name="publishcolor"><![CDATA[rgb]]></property>
+                <property name="filename"><![CDATA[rtsp://iotdepot:8554/faces]]></property>
+                <property name="publishformat"><![CDATA[jpeg]]></property>
+              </properties>
+            </connector>
+          </connectors>
+        </window-source>
+        <window-calculate index="pi_EMPTY" algorithm="ImageProcessing" pubsub="true" name="resized416">
+          <description><![CDATA[Our models need a 416 by 416 image.  This calculate window downsizes the image and adds grey strips if necessary. ]]></description>
+          <schema>
+            <fields>
+              <field name="id" type="int64" key="true"/>
+              <field name="_image_orig_" type="blob"/>
+              <field name="_image_" type="blob"/>
+            </fields>
+          </schema>
+          <parameters>
+            <properties>
+              <property name="function"><![CDATA[resize]]></property>
+              <property name="coordType"><![CDATA[RECT]]></property>
+              <property name="preFlip"><![CDATA[-1000]]></property>
+              <property name="x"><![CDATA[0]]></property>
+              <property name="y"><![CDATA[0]]></property>
+              <property name="xMin"><![CDATA[0]]></property>
+              <property name="yMin"><![CDATA[0]]></property>
+              <property name="xMax"><![CDATA[0]]></property>
+              <property name="yMax"><![CDATA[0]]></property>
+              <property name="width"><![CDATA[416]]></property>
+              <property name="height"><![CDATA[416]]></property>
+              <property name="outputWidth"><![CDATA[0]]></property>
+              <property name="outputHeight"><![CDATA[0]]></property>
+              <property name="outputEncoding"><![CDATA[jpg]]></property>
+              <property name="alpha"><![CDATA[0.0]]></property>
+              <property name="beta"><![CDATA[0.0]]></property>
+              <property name="delta"><![CDATA[0.0]]></property>
+              <property name="theta"><![CDATA[0.0]]></property>
+              <property name="value"><![CDATA[0.0]]></property>
+              <property name="minValue"><![CDATA[0.0]]></property>
+              <property name="maxValue"><![CDATA[0.0]]></property>
+              <property name="type"><![CDATA[0]]></property>
+              <property name="flag1"><![CDATA[0.0]]></property>
+              <property name="flag2"><![CDATA[0.0]]></property>
+              <property name="flag3"><![CDATA[0.0]]></property>
+              <property name="flag4"><![CDATA[0.0]]></property>
+              <property name="flag5"><![CDATA[0.0]]></property>
+              <property name="scale"><![CDATA[0]]></property>
+              <property name="resizeType"><![CDATA[letterbox]]></property>
+              <property name="interpolation"><![CDATA[cubic]]></property>
+              <property name="padding"><![CDATA[constant]]></property>
+              <property name="b"><![CDATA[128]]></property>
+              <property name="g"><![CDATA[128]]></property>
+              <property name="r"><![CDATA[128]]></property>
+              <property name="smoothType"><![CDATA[Gaussian]]></property>
+              <property name="normalizeType"><![CDATA[zero_one]]></property>
+              <property name="kernelHeight"><![CDATA[3]]></property>
+              <property name="kernelWidth"><![CDATA[3]]></property>
+              <property name="padType"><![CDATA[size_divisible]]></property>
+              <property name="sizeDivisor"><![CDATA[8]]></property>
+              <property name="cropType"><![CDATA[basic]]></property>
+            </properties>
+          </parameters>
+          <input-map>
+            <properties>
+              <property name="imageInput"><![CDATA[_image_orig_]]></property>
+            </properties>
+          </input-map>
+          <output-map>
+            <properties>
+              <property name="imageOutput"><![CDATA[_image_]]></property>
+            </properties>
+          </output-map>
+        </window-calculate>
+        <window-model-reader name="readtinyyolo416model" model-type="astore" pubsub="true">
+          <parameters>
+            <properties>
+              <!-- Please update here -->
+              <property name="reference"><![CDATA[/data/faceDetection.Tiny-Yolov2.416.v1.astore]]></property>
+              <property name="usegpuesp"><![CDATA[1]]></property>
+              <property name="NDEVICES"><![CDATA[1]]></property>
+              <property name="DEVICE0"><![CDATA[0]]></property>
+            </properties>
+          </parameters>
+        </window-model-reader>
+        <window-score name="facedetection" pubsub="true">
+          <description><![CDATA[Face Detection - Process incoming images and detect human faces in the video stream.]]></description>
+          <schema>
+            <fields>
+              <field name="id" type="int64" key="true"/>
+              <field name="_image_" type="blob"/>
+              <field name="_nObjects_" type="double"/>
+              <field name="_Object0_" type="string"/>
+              <field name="_P_Object0_" type="double"/>
+              <field name="_Object0_x" type="double"/>
+              <field name="_Object0_y" type="double"/>
+              <field name="_Object0_width" type="double"/>
+              <field name="_Object0_height" type="double"/>
+              <field name="_Object1_" type="string"/>
+              <field name="_P_Object1_" type="double"/>
+              <field name="_Object1_x" type="double"/>
+              <field name="_Object1_y" type="double"/>
+              <field name="_Object1_width" type="double"/>
+              <field name="_Object1_height" type="double"/>
+              <field name="_Object2_" type="string"/>
+              <field name="_P_Object2_" type="double"/>
+              <field name="_Object2_x" type="double"/>
+              <field name="_Object2_y" type="double"/>
+              <field name="_Object2_width" type="double"/>
+              <field name="_Object2_height" type="double"/>
+              <field name="_Object3_" type="string"/>
+              <field name="_P_Object3_" type="double"/>
+              <field name="_Object3_x" type="double"/>
+              <field name="_Object3_y" type="double"/>
+              <field name="_Object3_width" type="double"/>
+              <field name="_Object3_height" type="double"/>
+              <field name="_Object4_" type="string"/>
+              <field name="_P_Object4_" type="double"/>
+              <field name="_Object4_x" type="double"/>
+              <field name="_Object4_y" type="double"/>
+              <field name="_Object4_width" type="double"/>
+              <field name="_Object4_height" type="double"/>
+              <field name="_Object5_" type="string"/>
+              <field name="_P_Object5_" type="double"/>
+              <field name="_Object5_x" type="double"/>
+              <field name="_Object5_y" type="double"/>
+              <field name="_Object5_width" type="double"/>
+              <field name="_Object5_height" type="double"/>
+              <field name="_Object6_" type="string"/>
+              <field name="_P_Object6_" type="double"/>
+              <field name="_Object6_x" type="double"/>
+              <field name="_Object6_y" type="double"/>
+              <field name="_Object6_width" type="double"/>
+              <field name="_Object6_height" type="double"/>
+              <field name="_Object7_" type="string"/>
+              <field name="_P_Object7_" type="double"/>
+              <field name="_Object7_x" type="double"/>
+              <field name="_Object7_y" type="double"/>
+              <field name="_Object7_width" type="double"/>
+              <field name="_Object7_height" type="double"/>
+              <field name="_Object8_" type="string"/>
+              <field name="_P_Object8_" type="double"/>
+              <field name="_Object8_x" type="double"/>
+              <field name="_Object8_y" type="double"/>
+              <field name="_Object8_width" type="double"/>
+              <field name="_Object8_height" type="double"/>
+              <field name="_Object9_" type="string"/>
+              <field name="_P_Object9_" type="double"/>
+              <field name="_Object9_x" type="double"/>
+              <field name="_Object9_y" type="double"/>
+              <field name="_Object9_width" type="double"/>
+              <field name="_Object9_height" type="double"/>
+              <field name="_Object10_" type="string"/>
+              <field name="_P_Object10_" type="double"/>
+              <field name="_Object10_x" type="double"/>
+              <field name="_Object10_y" type="double"/>
+              <field name="_Object10_width" type="double"/>
+              <field name="_Object10_height" type="double"/>
+              <field name="_Object11_" type="string"/>
+              <field name="_P_Object11_" type="double"/>
+              <field name="_Object11_x" type="double"/>
+              <field name="_Object11_y" type="double"/>
+              <field name="_Object11_width" type="double"/>
+              <field name="_Object11_height" type="double"/>
+              <field name="_Object12_" type="string"/>
+              <field name="_P_Object12_" type="double"/>
+              <field name="_Object12_x" type="double"/>
+              <field name="_Object12_y" type="double"/>
+              <field name="_Object12_width" type="double"/>
+              <field name="_Object12_height" type="double"/>
+              <field name="_Object13_" type="string"/>
+              <field name="_P_Object13_" type="double"/>
+              <field name="_Object13_x" type="double"/>
+              <field name="_Object13_y" type="double"/>
+              <field name="_Object13_width" type="double"/>
+              <field name="_Object13_height" type="double"/>
+              <field name="_Object14_" type="string"/>
+              <field name="_P_Object14_" type="double"/>
+              <field name="_Object14_x" type="double"/>
+              <field name="_Object14_y" type="double"/>
+              <field name="_Object14_width" type="double"/>
+              <field name="_Object14_height" type="double"/>
+              <field name="_Object15_" type="string"/>
+              <field name="_P_Object15_" type="double"/>
+              <field name="_Object15_x" type="double"/>
+              <field name="_Object15_y" type="double"/>
+              <field name="_Object15_width" type="double"/>
+              <field name="_Object15_height" type="double"/>
+              <field name="_Object16_" type="string"/>
+              <field name="_P_Object16_" type="double"/>
+              <field name="_Object16_x" type="double"/>
+              <field name="_Object16_y" type="double"/>
+              <field name="_Object16_width" type="double"/>
+              <field name="_Object16_height" type="double"/>
+              <field name="_Object17_" type="string"/>
+              <field name="_P_Object17_" type="double"/>
+              <field name="_Object17_x" type="double"/>
+              <field name="_Object17_y" type="double"/>
+              <field name="_Object17_width" type="double"/>
+              <field name="_Object17_height" type="double"/>
+              <field name="_Object18_" type="string"/>
+              <field name="_P_Object18_" type="double"/>
+              <field name="_Object18_x" type="double"/>
+              <field name="_Object18_y" type="double"/>
+              <field name="_Object18_width" type="double"/>
+              <field name="_Object18_height" type="double"/>
+              <field name="_Object19_" type="string"/>
+              <field name="_P_Object19_" type="double"/>
+              <field name="_Object19_x" type="double"/>
+              <field name="_Object19_y" type="double"/>
+              <field name="_Object19_width" type="double"/>
+              <field name="_Object19_height" type="double"/>
+              <field name="_Object20_" type="string"/>
+              <field name="_P_Object20_" type="double"/>
+              <field name="_Object20_x" type="double"/>
+              <field name="_Object20_y" type="double"/>
+              <field name="_Object20_width" type="double"/>
+              <field name="_Object20_height" type="double"/>
+              <field name="_Object21_" type="string"/>
+              <field name="_P_Object21_" type="double"/>
+              <field name="_Object21_x" type="double"/>
+              <field name="_Object21_y" type="double"/>
+              <field name="_Object21_width" type="double"/>
+              <field name="_Object21_height" type="double"/>
+              <field name="_Object22_" type="string"/>
+              <field name="_P_Object22_" type="double"/>
+              <field name="_Object22_x" type="double"/>
+              <field name="_Object22_y" type="double"/>
+              <field name="_Object22_width" type="double"/>
+              <field name="_Object22_height" type="double"/>
+              <field name="_Object23_" type="string"/>
+              <field name="_P_Object23_" type="double"/>
+              <field name="_Object23_x" type="double"/>
+              <field name="_Object23_y" type="double"/>
+              <field name="_Object23_width" type="double"/>
+              <field name="_Object23_height" type="double"/>
+              <field name="_Object24_" type="string"/>
+              <field name="_P_Object24_" type="double"/>
+              <field name="_Object24_x" type="double"/>
+              <field name="_Object24_y" type="double"/>
+              <field name="_Object24_width" type="double"/>
+              <field name="_Object24_height" type="double"/>
+              <field name="_Object25_" type="string"/>
+              <field name="_P_Object25_" type="double"/>
+              <field name="_Object25_x" type="double"/>
+              <field name="_Object25_y" type="double"/>
+              <field name="_Object25_width" type="double"/>
+              <field name="_Object25_height" type="double"/>
+              <field name="_Object26_" type="string"/>
+              <field name="_P_Object26_" type="double"/>
+              <field name="_Object26_x" type="double"/>
+              <field name="_Object26_y" type="double"/>
+              <field name="_Object26_width" type="double"/>
+              <field name="_Object26_height" type="double"/>
+              <field name="_Object27_" type="string"/>
+              <field name="_P_Object27_" type="double"/>
+              <field name="_Object27_x" type="double"/>
+              <field name="_Object27_y" type="double"/>
+              <field name="_Object27_width" type="double"/>
+              <field name="_Object27_height" type="double"/>
+              <field name="_Object28_" type="string"/>
+              <field name="_P_Object28_" type="double"/>
+              <field name="_Object28_x" type="double"/>
+              <field name="_Object28_y" type="double"/>
+              <field name="_Object28_width" type="double"/>
+              <field name="_Object28_height" type="double"/>
+              <field name="_Object29_" type="string"/>
+              <field name="_P_Object29_" type="double"/>
+              <field name="_Object29_x" type="double"/>
+              <field name="_Object29_y" type="double"/>
+              <field name="_Object29_width" type="double"/>
+              <field name="_Object29_height" type="double"/>
+              <field name="_Object30_" type="string"/>
+              <field name="_P_Object30_" type="double"/>
+              <field name="_Object30_x" type="double"/>
+              <field name="_Object30_y" type="double"/>
+              <field name="_Object30_width" type="double"/>
+              <field name="_Object30_height" type="double"/>
+              <field name="_Object31_" type="string"/>
+              <field name="_P_Object31_" type="double"/>
+              <field name="_Object31_x" type="double"/>
+              <field name="_Object31_y" type="double"/>
+              <field name="_Object31_width" type="double"/>
+              <field name="_Object31_height" type="double"/>
+              <field name="_Object32_" type="string"/>
+              <field name="_P_Object32_" type="double"/>
+              <field name="_Object32_x" type="double"/>
+              <field name="_Object32_y" type="double"/>
+              <field name="_Object32_width" type="double"/>
+              <field name="_Object32_height" type="double"/>
+              <field name="_Object33_" type="string"/>
+              <field name="_P_Object33_" type="double"/>
+              <field name="_Object33_x" type="double"/>
+              <field name="_Object33_y" type="double"/>
+              <field name="_Object33_width" type="double"/>
+              <field name="_Object33_height" type="double"/>
+              <field name="_Object34_" type="string"/>
+              <field name="_P_Object34_" type="double"/>
+              <field name="_Object34_x" type="double"/>
+              <field name="_Object34_y" type="double"/>
+              <field name="_Object34_width" type="double"/>
+              <field name="_Object34_height" type="double"/>
+              <field name="_Object35_" type="string"/>
+              <field name="_P_Object35_" type="double"/>
+              <field name="_Object35_x" type="double"/>
+              <field name="_Object35_y" type="double"/>
+              <field name="_Object35_width" type="double"/>
+              <field name="_Object35_height" type="double"/>
+              <field name="_Object36_" type="string"/>
+              <field name="_P_Object36_" type="double"/>
+              <field name="_Object36_x" type="double"/>
+              <field name="_Object36_y" type="double"/>
+              <field name="_Object36_width" type="double"/>
+              <field name="_Object36_height" type="double"/>
+              <field name="_Object37_" type="string"/>
+              <field name="_P_Object37_" type="double"/>
+              <field name="_Object37_x" type="double"/>
+              <field name="_Object37_y" type="double"/>
+              <field name="_Object37_width" type="double"/>
+              <field name="_Object37_height" type="double"/>
+              <field name="_Object38_" type="string"/>
+              <field name="_P_Object38_" type="double"/>
+              <field name="_Object38_x" type="double"/>
+              <field name="_Object38_y" type="double"/>
+              <field name="_Object38_width" type="double"/>
+              <field name="_Object38_height" type="double"/>
+              <field name="_Object39_" type="string"/>
+              <field name="_P_Object39_" type="double"/>
+              <field name="_Object39_x" type="double"/>
+              <field name="_Object39_y" type="double"/>
+              <field name="_Object39_width" type="double"/>
+              <field name="_Object39_height" type="double"/>
+              <field name="_Object40_" type="string"/>
+              <field name="_P_Object40_" type="double"/>
+              <field name="_Object40_x" type="double"/>
+              <field name="_Object40_y" type="double"/>
+              <field name="_Object40_width" type="double"/>
+              <field name="_Object40_height" type="double"/>
+              <field name="_Object41_" type="string"/>
+              <field name="_P_Object41_" type="double"/>
+              <field name="_Object41_x" type="double"/>
+              <field name="_Object41_y" type="double"/>
+              <field name="_Object41_width" type="double"/>
+              <field name="_Object41_height" type="double"/>
+              <field name="_Object42_" type="string"/>
+              <field name="_P_Object42_" type="double"/>
+              <field name="_Object42_x" type="double"/>
+              <field name="_Object42_y" type="double"/>
+              <field name="_Object42_width" type="double"/>
+              <field name="_Object42_height" type="double"/>
+              <field name="_Object43_" type="string"/>
+              <field name="_P_Object43_" type="double"/>
+              <field name="_Object43_x" type="double"/>
+              <field name="_Object43_y" type="double"/>
+              <field name="_Object43_width" type="double"/>
+              <field name="_Object43_height" type="double"/>
+              <field name="_Object44_" type="string"/>
+              <field name="_P_Object44_" type="double"/>
+              <field name="_Object44_x" type="double"/>
+              <field name="_Object44_y" type="double"/>
+              <field name="_Object44_width" type="double"/>
+              <field name="_Object44_height" type="double"/>
+              <field name="_Object45_" type="string"/>
+              <field name="_P_Object45_" type="double"/>
+              <field name="_Object45_x" type="double"/>
+              <field name="_Object45_y" type="double"/>
+              <field name="_Object45_width" type="double"/>
+              <field name="_Object45_height" type="double"/>
+              <field name="_Object46_" type="string"/>
+              <field name="_P_Object46_" type="double"/>
+              <field name="_Object46_x" type="double"/>
+              <field name="_Object46_y" type="double"/>
+              <field name="_Object46_width" type="double"/>
+              <field name="_Object46_height" type="double"/>
+              <field name="_Object47_" type="string"/>
+              <field name="_P_Object47_" type="double"/>
+              <field name="_Object47_x" type="double"/>
+              <field name="_Object47_y" type="double"/>
+              <field name="_Object47_width" type="double"/>
+              <field name="_Object47_height" type="double"/>
+              <field name="_Object48_" type="string"/>
+              <field name="_P_Object48_" type="double"/>
+              <field name="_Object48_x" type="double"/>
+              <field name="_Object48_y" type="double"/>
+              <field name="_Object48_width" type="double"/>
+              <field name="_Object48_height" type="double"/>
+              <field name="_Object49_" type="string"/>
+              <field name="_P_Object49_" type="double"/>
+              <field name="_Object49_x" type="double"/>
+              <field name="_Object49_y" type="double"/>
+              <field name="_Object49_width" type="double"/>
+              <field name="_Object49_height" type="double"/>
+              <field name="_Object50_" type="string"/>
+              <field name="_P_Object50_" type="double"/>
+              <field name="_Object50_x" type="double"/>
+              <field name="_Object50_y" type="double"/>
+              <field name="_Object50_width" type="double"/>
+              <field name="_Object50_height" type="double"/>
+              <field name="_Object51_" type="string"/>
+              <field name="_P_Object51_" type="double"/>
+              <field name="_Object51_x" type="double"/>
+              <field name="_Object51_y" type="double"/>
+              <field name="_Object51_width" type="double"/>
+              <field name="_Object51_height" type="double"/>
+              <field name="_Object52_" type="string"/>
+              <field name="_P_Object52_" type="double"/>
+              <field name="_Object52_x" type="double"/>
+              <field name="_Object52_y" type="double"/>
+              <field name="_Object52_width" type="double"/>
+              <field name="_Object52_height" type="double"/>
+              <field name="_Object53_" type="string"/>
+              <field name="_P_Object53_" type="double"/>
+              <field name="_Object53_x" type="double"/>
+              <field name="_Object53_y" type="double"/>
+              <field name="_Object53_width" type="double"/>
+              <field name="_Object53_height" type="double"/>
+              <field name="_Object54_" type="string"/>
+              <field name="_P_Object54_" type="double"/>
+              <field name="_Object54_x" type="double"/>
+              <field name="_Object54_y" type="double"/>
+              <field name="_Object54_width" type="double"/>
+              <field name="_Object54_height" type="double"/>
+              <field name="_Object55_" type="string"/>
+              <field name="_P_Object55_" type="double"/>
+              <field name="_Object55_x" type="double"/>
+              <field name="_Object55_y" type="double"/>
+              <field name="_Object55_width" type="double"/>
+              <field name="_Object55_height" type="double"/>
+              <field name="_Object56_" type="string"/>
+              <field name="_P_Object56_" type="double"/>
+              <field name="_Object56_x" type="double"/>
+              <field name="_Object56_y" type="double"/>
+              <field name="_Object56_width" type="double"/>
+              <field name="_Object56_height" type="double"/>
+              <field name="_Object57_" type="string"/>
+              <field name="_P_Object57_" type="double"/>
+              <field name="_Object57_x" type="double"/>
+              <field name="_Object57_y" type="double"/>
+              <field name="_Object57_width" type="double"/>
+              <field name="_Object57_height" type="double"/>
+              <field name="_Object58_" type="string"/>
+              <field name="_P_Object58_" type="double"/>
+              <field name="_Object58_x" type="double"/>
+              <field name="_Object58_y" type="double"/>
+              <field name="_Object58_width" type="double"/>
+              <field name="_Object58_height" type="double"/>
+              <field name="_Object59_" type="string"/>
+              <field name="_P_Object59_" type="double"/>
+              <field name="_Object59_x" type="double"/>
+              <field name="_Object59_y" type="double"/>
+              <field name="_Object59_width" type="double"/>
+              <field name="_Object59_height" type="double"/>
+              <field name="_Object60_" type="string"/>
+              <field name="_P_Object60_" type="double"/>
+              <field name="_Object60_x" type="double"/>
+              <field name="_Object60_y" type="double"/>
+              <field name="_Object60_width" type="double"/>
+              <field name="_Object60_height" type="double"/>
+              <field name="_Object61_" type="string"/>
+              <field name="_P_Object61_" type="double"/>
+              <field name="_Object61_x" type="double"/>
+              <field name="_Object61_y" type="double"/>
+              <field name="_Object61_width" type="double"/>
+              <field name="_Object61_height" type="double"/>
+              <field name="_Object62_" type="string"/>
+              <field name="_P_Object62_" type="double"/>
+              <field name="_Object62_x" type="double"/>
+              <field name="_Object62_y" type="double"/>
+              <field name="_Object62_width" type="double"/>
+              <field name="_Object62_height" type="double"/>
+              <field name="_Object63_" type="string"/>
+              <field name="_P_Object63_" type="double"/>
+              <field name="_Object63_x" type="double"/>
+              <field name="_Object63_y" type="double"/>
+              <field name="_Object63_width" type="double"/>
+              <field name="_Object63_height" type="double"/>
+              <field name="_Object64_" type="string"/>
+              <field name="_P_Object64_" type="double"/>
+              <field name="_Object64_x" type="double"/>
+              <field name="_Object64_y" type="double"/>
+              <field name="_Object64_width" type="double"/>
+              <field name="_Object64_height" type="double"/>
+              <field name="_Object65_" type="string"/>
+              <field name="_P_Object65_" type="double"/>
+              <field name="_Object65_x" type="double"/>
+              <field name="_Object65_y" type="double"/>
+              <field name="_Object65_width" type="double"/>
+              <field name="_Object65_height" type="double"/>
+              <field name="_Object66_" type="string"/>
+              <field name="_P_Object66_" type="double"/>
+              <field name="_Object66_x" type="double"/>
+              <field name="_Object66_y" type="double"/>
+              <field name="_Object66_width" type="double"/>
+              <field name="_Object66_height" type="double"/>
+              <field name="_Object67_" type="string"/>
+              <field name="_P_Object67_" type="double"/>
+              <field name="_Object67_x" type="double"/>
+              <field name="_Object67_y" type="double"/>
+              <field name="_Object67_width" type="double"/>
+              <field name="_Object67_height" type="double"/>
+              <field name="_Object68_" type="string"/>
+              <field name="_P_Object68_" type="double"/>
+              <field name="_Object68_x" type="double"/>
+              <field name="_Object68_y" type="double"/>
+              <field name="_Object68_width" type="double"/>
+              <field name="_Object68_height" type="double"/>
+              <field name="_Object69_" type="string"/>
+              <field name="_P_Object69_" type="double"/>
+              <field name="_Object69_x" type="double"/>
+              <field name="_Object69_y" type="double"/>
+              <field name="_Object69_width" type="double"/>
+              <field name="_Object69_height" type="double"/>
+              <field name="_Object70_" type="string"/>
+              <field name="_P_Object70_" type="double"/>
+              <field name="_Object70_x" type="double"/>
+              <field name="_Object70_y" type="double"/>
+              <field name="_Object70_width" type="double"/>
+              <field name="_Object70_height" type="double"/>
+              <field name="_Object71_" type="string"/>
+              <field name="_P_Object71_" type="double"/>
+              <field name="_Object71_x" type="double"/>
+              <field name="_Object71_y" type="double"/>
+              <field name="_Object71_width" type="double"/>
+              <field name="_Object71_height" type="double"/>
+              <field name="_Object72_" type="string"/>
+              <field name="_P_Object72_" type="double"/>
+              <field name="_Object72_x" type="double"/>
+              <field name="_Object72_y" type="double"/>
+              <field name="_Object72_width" type="double"/>
+              <field name="_Object72_height" type="double"/>
+              <field name="_Object73_" type="string"/>
+              <field name="_P_Object73_" type="double"/>
+              <field name="_Object73_x" type="double"/>
+              <field name="_Object73_y" type="double"/>
+              <field name="_Object73_width" type="double"/>
+              <field name="_Object73_height" type="double"/>
+              <field name="_Object74_" type="string"/>
+              <field name="_P_Object74_" type="double"/>
+              <field name="_Object74_x" type="double"/>
+              <field name="_Object74_y" type="double"/>
+              <field name="_Object74_width" type="double"/>
+              <field name="_Object74_height" type="double"/>
+              <field name="_Object75_" type="string"/>
+              <field name="_P_Object75_" type="double"/>
+              <field name="_Object75_x" type="double"/>
+              <field name="_Object75_y" type="double"/>
+              <field name="_Object75_width" type="double"/>
+              <field name="_Object75_height" type="double"/>
+              <field name="_Object76_" type="string"/>
+              <field name="_P_Object76_" type="double"/>
+              <field name="_Object76_x" type="double"/>
+              <field name="_Object76_y" type="double"/>
+              <field name="_Object76_width" type="double"/>
+              <field name="_Object76_height" type="double"/>
+              <field name="_Object77_" type="string"/>
+              <field name="_P_Object77_" type="double"/>
+              <field name="_Object77_x" type="double"/>
+              <field name="_Object77_y" type="double"/>
+              <field name="_Object77_width" type="double"/>
+              <field name="_Object77_height" type="double"/>
+              <field name="_Object78_" type="string"/>
+              <field name="_P_Object78_" type="double"/>
+              <field name="_Object78_x" type="double"/>
+              <field name="_Object78_y" type="double"/>
+              <field name="_Object78_width" type="double"/>
+              <field name="_Object78_height" type="double"/>
+              <field name="_Object79_" type="string"/>
+              <field name="_P_Object79_" type="double"/>
+              <field name="_Object79_x" type="double"/>
+              <field name="_Object79_y" type="double"/>
+              <field name="_Object79_width" type="double"/>
+              <field name="_Object79_height" type="double"/>
+              <field name="_Object80_" type="string"/>
+              <field name="_P_Object80_" type="double"/>
+              <field name="_Object80_x" type="double"/>
+              <field name="_Object80_y" type="double"/>
+              <field name="_Object80_width" type="double"/>
+              <field name="_Object80_height" type="double"/>
+              <field name="_Object81_" type="string"/>
+              <field name="_P_Object81_" type="double"/>
+              <field name="_Object81_x" type="double"/>
+              <field name="_Object81_y" type="double"/>
+              <field name="_Object81_width" type="double"/>
+              <field name="_Object81_height" type="double"/>
+              <field name="_Object82_" type="string"/>
+              <field name="_P_Object82_" type="double"/>
+              <field name="_Object82_x" type="double"/>
+              <field name="_Object82_y" type="double"/>
+              <field name="_Object82_width" type="double"/>
+              <field name="_Object82_height" type="double"/>
+              <field name="_Object83_" type="string"/>
+              <field name="_P_Object83_" type="double"/>
+              <field name="_Object83_x" type="double"/>
+              <field name="_Object83_y" type="double"/>
+              <field name="_Object83_width" type="double"/>
+              <field name="_Object83_height" type="double"/>
+              <field name="_Object84_" type="string"/>
+              <field name="_P_Object84_" type="double"/>
+              <field name="_Object84_x" type="double"/>
+              <field name="_Object84_y" type="double"/>
+              <field name="_Object84_width" type="double"/>
+              <field name="_Object84_height" type="double"/>
+              <field name="_Object85_" type="string"/>
+              <field name="_P_Object85_" type="double"/>
+              <field name="_Object85_x" type="double"/>
+              <field name="_Object85_y" type="double"/>
+              <field name="_Object85_width" type="double"/>
+              <field name="_Object85_height" type="double"/>
+              <field name="_Object86_" type="string"/>
+              <field name="_P_Object86_" type="double"/>
+              <field name="_Object86_x" type="double"/>
+              <field name="_Object86_y" type="double"/>
+              <field name="_Object86_width" type="double"/>
+              <field name="_Object86_height" type="double"/>
+              <field name="_Object87_" type="string"/>
+              <field name="_P_Object87_" type="double"/>
+              <field name="_Object87_x" type="double"/>
+              <field name="_Object87_y" type="double"/>
+              <field name="_Object87_width" type="double"/>
+              <field name="_Object87_height" type="double"/>
+              <field name="_Object88_" type="string"/>
+              <field name="_P_Object88_" type="double"/>
+              <field name="_Object88_x" type="double"/>
+              <field name="_Object88_y" type="double"/>
+              <field name="_Object88_width" type="double"/>
+              <field name="_Object88_height" type="double"/>
+              <field name="_Object89_" type="string"/>
+              <field name="_P_Object89_" type="double"/>
+              <field name="_Object89_x" type="double"/>
+              <field name="_Object89_y" type="double"/>
+              <field name="_Object89_width" type="double"/>
+              <field name="_Object89_height" type="double"/>
+              <field name="_Object90_" type="string"/>
+              <field name="_P_Object90_" type="double"/>
+              <field name="_Object90_x" type="double"/>
+              <field name="_Object90_y" type="double"/>
+              <field name="_Object90_width" type="double"/>
+              <field name="_Object90_height" type="double"/>
+              <field name="_Object91_" type="string"/>
+              <field name="_P_Object91_" type="double"/>
+              <field name="_Object91_x" type="double"/>
+              <field name="_Object91_y" type="double"/>
+              <field name="_Object91_width" type="double"/>
+              <field name="_Object91_height" type="double"/>
+              <field name="_Object92_" type="string"/>
+              <field name="_P_Object92_" type="double"/>
+              <field name="_Object92_x" type="double"/>
+              <field name="_Object92_y" type="double"/>
+              <field name="_Object92_width" type="double"/>
+              <field name="_Object92_height" type="double"/>
+              <field name="_Object93_" type="string"/>
+              <field name="_P_Object93_" type="double"/>
+              <field name="_Object93_x" type="double"/>
+              <field name="_Object93_y" type="double"/>
+              <field name="_Object93_width" type="double"/>
+              <field name="_Object93_height" type="double"/>
+              <field name="_Object94_" type="string"/>
+              <field name="_P_Object94_" type="double"/>
+              <field name="_Object94_x" type="double"/>
+              <field name="_Object94_y" type="double"/>
+              <field name="_Object94_width" type="double"/>
+              <field name="_Object94_height" type="double"/>
+              <field name="_Object95_" type="string"/>
+              <field name="_P_Object95_" type="double"/>
+              <field name="_Object95_x" type="double"/>
+              <field name="_Object95_y" type="double"/>
+              <field name="_Object95_width" type="double"/>
+              <field name="_Object95_height" type="double"/>
+              <field name="_Object96_" type="string"/>
+              <field name="_P_Object96_" type="double"/>
+              <field name="_Object96_x" type="double"/>
+              <field name="_Object96_y" type="double"/>
+              <field name="_Object96_width" type="double"/>
+              <field name="_Object96_height" type="double"/>
+              <field name="_Object97_" type="string"/>
+              <field name="_P_Object97_" type="double"/>
+              <field name="_Object97_x" type="double"/>
+              <field name="_Object97_y" type="double"/>
+              <field name="_Object97_width" type="double"/>
+              <field name="_Object97_height" type="double"/>
+            </fields>
+          </schema>
+          <models>
+            <offline model-type="astore"/>
+          </models>
+        </window-score>
+        <window-score name="genderdetection" pubsub="true">
+          <description><![CDATA[Gender Classification - Determine male or female]]></description>
+          <schema>
+            <fields>
+              <field name="id" type="int64" key="true"/>
+              <field name="board_id" type="int64" key="true"/>
+              <field name="_nObjects_" type="double"/>
+              <field name="ncrops" type="double"/>
+              <field name="P__label_men" type="double"/>
+              <field name="P__label_women" type="double"/>
+              <field name="I__label_gender" type="string"/>
+              <field name="P__label_Age_1_5" type="double"/>
+              <field name="P__label_Age_12_17" type="double"/>
+              <field name="P__label_Age_18_20" type="double"/>
+              <field name="P__label_Age_21_24" type="double"/>
+              <field name="P__label_Age_25_34" type="double"/>
+              <field name="P__label_Age_35_44" type="double"/>
+              <field name="P__label_Age_45_54" type="double"/>
+              <field name="P__label_Age_55_64" type="double"/>
+              <field name="P__label_Age_6_11" type="double"/>
+              <field name="P__label_Age_65_71" type="double"/>
+              <field name="P__label_Age_72_100" type="double"/>
+              <field name="I__label_age" type="string"/>
+              <field name="P__label_Angry" type="double"/>
+              <field name="P__label_Fear" type="double"/>
+              <field name="P__label_Happy" type="double"/>
+              <field name="P__label_Neutral" type="double"/>
+              <field name="P__label_Sad" type="double"/>
+              <field name="P__label_Surprise" type="double"/>
+              <field name="I__label_emotion" type="string"/>
+              <field name="_image_" type="blob"/>
+              <field name="_RGB_image_" type="blob"/>
+              <field name="_genderage_image_" type="blob"/>
+              <field name="_emotion_image_" type="blob"/>
+            </fields>
+          </schema>
+          <models>
+            <offline model-type="astore">
+              <input-map>
+                <properties>
+                  <property name="_image_"><![CDATA[_genderage_image_]]></property>
+                </properties>
+              </input-map>
+              <output-map>
+                <properties>
+                  <property name="I__label_"><![CDATA[I__label_gender]]></property>
+                </properties>
+              </output-map>
+            </offline>
+          </models>
+        </window-score>
+        <window-model-reader name="readgendermodel" pubsub="true" model-type="astore">
+          <description><![CDATA[Read Gender astore from disk]]></description>
+          <parameters>
+            <properties>
+              <!-- Please update here -->
+              <property name="reference"><![CDATA[/data/Gender.astore]]></property>
+              <property name="usegpuesp"><![CDATA[1]]></property>
+              <property name="NDEVICES"><![CDATA[1]]></property>
+              <property name="DEVICE0"><![CDATA[0]]></property>
+            </properties>
+          </parameters>
+        </window-model-reader>
+        <window-model-reader name="readagemodel" pubsub="true" model-type="astore">
+          <description><![CDATA[Read model which determines age]]></description>
+          <parameters>
+            <properties>
+              <!-- Please update here -->
+              <property name="reference"><![CDATA[/data/Age.astore]]></property>
+              <property name="usegpuesp"><![CDATA[1]]></property>
+              <property name="NDEVICES"><![CDATA[1]]></property>
+              <property name="DEVICE0"><![CDATA[0]]></property>
+            </properties>
+          </parameters>
+        </window-model-reader>
+        <window-score name="agedetection" pubsub="true">
+          <description><![CDATA[Age Classification - Determine approximate age grouped by category]]></description>
+          <schema>
+            <fields>
+              <field name="id" type="int64" key="true"/>
+              <field name="board_id" type="int64" key="true"/>
+              <field name="_nObjects_" type="double"/>
+              <field name="ncrops" type="double"/>
+              <field name="P__label_men" type="double"/>
+              <field name="P__label_women" type="double"/>
+              <field name="I__label_gender" type="string"/>
+              <field name="P__label_Age_1_5" type="double"/>
+              <field name="P__label_Age_12_17" type="double"/>
+              <field name="P__label_Age_18_20" type="double"/>
+              <field name="P__label_Age_21_24" type="double"/>
+              <field name="P__label_Age_25_34" type="double"/>
+              <field name="P__label_Age_35_44" type="double"/>
+              <field name="P__label_Age_45_54" type="double"/>
+              <field name="P__label_Age_55_64" type="double"/>
+              <field name="P__label_Age_6_11" type="double"/>
+              <field name="P__label_Age_65_71" type="double"/>
+              <field name="P__label_Age_72_100" type="double"/>
+              <field name="I__label_age" type="string"/>
+              <field name="P__label_Angry" type="double"/>
+              <field name="P__label_Fear" type="double"/>
+              <field name="P__label_Happy" type="double"/>
+              <field name="P__label_Neutral" type="double"/>
+              <field name="P__label_Sad" type="double"/>
+              <field name="P__label_Surprise" type="double"/>
+              <field name="I__label_emotion" type="string"/>
+              <field name="_image_" type="blob"/>
+              <field name="_RGB_image_" type="blob"/>
+              <field name="_genderage_image_" type="blob"/>
+              <field name="_emotion_image_" type="blob"/>
+            </fields>
+          </schema>
+          <models>
+            <offline model-type="astore">
+              <input-map>
+                <properties>
+                  <property name="_image_"><![CDATA[_genderage_image_]]></property>
+                </properties>
+              </input-map>
+              <output-map>
+                <properties>
+                  <property name="I__label_"><![CDATA[I__label_age]]></property>
+                </properties>
+              </output-map>
+            </offline>
+          </models>
+        </window-score>
+        <window-score name="emotiondetection" pubsub="true">
+          <description><![CDATA[Emotion Classification - Group by these classes:  Happy, Neutral, Sad, Fear, Surprise, Angry]]></description>
+          <schema>
+            <fields>
+              <field name="id" type="int64" key="true"/>
+              <field name="board_id" type="int64" key="true"/>
+              <field name="_nObjects_" type="double"/>
+              <field name="ncrops" type="double"/>
+              <field name="I__label_gender" type="string"/>
+              <field name="I__label_age" type="string"/>
+              <field name="I__label_emotion" type="string"/>
+              <field name="P__label_men" type="double"/>
+              <field name="P__label_women" type="double"/>
+              <field name="P__label_Age_1_5" type="double"/>
+              <field name="P__label_Age_12_17" type="double"/>
+              <field name="P__label_Age_18_20" type="double"/>
+              <field name="P__label_Age_21_24" type="double"/>
+              <field name="P__label_Age_25_34" type="double"/>
+              <field name="P__label_Age_35_44" type="double"/>
+              <field name="P__label_Age_45_54" type="double"/>
+              <field name="P__label_Age_55_64" type="double"/>
+              <field name="P__label_Age_6_11" type="double"/>
+              <field name="P__label_Age_65_71" type="double"/>
+              <field name="P__label_Age_72_100" type="double"/>
+              <field name="P__label_Angry" type="double"/>
+              <field name="P__label_Fear" type="double"/>
+              <field name="P__label_Happy" type="double"/>
+              <field name="P__label_Neutral" type="double"/>
+              <field name="P__label_Sad" type="double"/>
+              <field name="P__label_Surprise" type="double"/>
+              <field name="_image_" type="blob"/>
+              <field name="_RGB_image_" type="blob"/>
+              <field name="_genderage_image_" type="blob"/>
+              <field name="_emotion_image_" type="blob"/>
+            </fields>
+          </schema>
+          <models>
+            <offline model-type="astore">
+              <input-map>
+                <properties>
+                  <property name="_image_"><![CDATA[_emotion_image_]]></property>
+                </properties>
+              </input-map>
+              <output-map>
+                <properties>
+                  <property name="I__label_"><![CDATA[I__label_emotion]]></property>
+                </properties>
+              </output-map>
+            </offline>
+          </models>
+        </window-score>
+        <window-model-reader name="reademotionmodel" pubsub="true" model-type="astore">
+          <parameters>
+            <properties>
+              <!-- Please update here -->
+              <property name="reference"><![CDATA[/data/Emotions.astore]]></property>
+              <property name="usegpuesp"><![CDATA[1]]></property>
+              <property name="NDEVICES"><![CDATA[1]]></property>
+              <property name="DEVICE0"><![CDATA[0]]></property>
+            </properties>
+          </parameters>
+        </window-model-reader>
+        <window-python events="create" index="pi_EMPTY" name="cropfaces2">
+          <description><![CDATA[Crop all faces from incoming image and create a new event for each fact detected.]]></description>
+          <schema>
+            <fields>
+              <field name="id" type="int64" key="true"/>
+              <!-- field name='_masRowNum' type='int32' key='true'/ -->
+              <field name="board_id" type="int64" key="true"/>
+              <field name="_genderage_image_" type="blob"/>
+              <field name="_nObjects_" type="double"/>
+              <field name="ncrops" type="double"/>
+              <field name="_image_" type="blob"/>
+              <field name="_emotion_image_" type="blob"/>
+              <field name="_RGB_image_" type="blob"/>
+            </fields>
+          </schema>
+          <code><![CDATA[#! /usr/bin/python3
+#Copyright © 2024, SAS Institute Inc., Cary, NC, USA.  All Rights Reserved.
+#SPDX-License-Identifier: Apache-2.0
+
+
+import numpy as np
+import cv2
+import base64
+import math
+
+
+font_face = cv2.FONT_HERSHEY_SIMPLEX
+font_scale = 0.6
+thickness = 1
+box_color = (5, 74, 153)[::-1]  # SAS Blue (b,g,r)
+
+def Image2Array(img): # convert binary image to np array
+    np_arr = np.frombuffer(img, dtype=np.uint8)
+    img_np = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+    return img_np
+
+  # draw bounding boxes on images and return cropped pictures if of correct size and probability 
+def crops_draw_bboxes(events_list,key,_image_, _nObjects_,
+                            _Object0_x, _Object0_y, _Object0_width, _Object0_height, _P_Object0_,
+                            _Object1_x, _Object1_y, _Object1_width, _Object1_height, _P_Object1_,
+                            _Object2_x, _Object2_y, _Object2_width, _Object2_height, _P_Object2_,
+                            _Object3_x, _Object3_y, _Object3_width, _Object3_height, _P_Object3_,
+                            _Object4_x, _Object4_y, _Object4_width, _Object4_height, _P_Object4_,
+                            _Object5_x, _Object5_y, _Object5_width, _Object5_height, _P_Object5_,
+                            _Object6_x, _Object6_y, _Object6_width, _Object6_height, _P_Object6_,
+                            _Object7_x, _Object7_y, _Object7_width, _Object7_height, _P_Object7_
+                            ):
+    numberOfObjects = _nObjects_
+
+    # limit the max number of objects
+    if numberOfObjects > 3:        
+        numberOfObjects = 3 
+
+    img_np = Image2Array(_image_)
+    image_h, image_w, _ = img_np.shape
+
+    local_vars=locals()  # creates a dictionary containing all the local variables
+    row={}
+    for i in range(int(float(numberOfObjects))):
+        row['_Object'+str(i)+'_x'] = local_vars['_Object'+str(i)+'_x']
+        row['_Object'+str(i)+'_y'] = local_vars['_Object'+str(i)+'_y']
+        row['_Object'+str(i)+'_width'] = local_vars['_Object'+str(i)+'_width']
+        row['_Object'+str(i)+'_height'] = local_vars['_Object'+str(i)+'_height']
+        row['_P_Object'+str(i)+'_'] = local_vars['_P_Object'+str(i)+'_']
+
+    #print(row)
+
+    def zoomout(x_min,x_max,y_min,y_max,fudgefactor):
+    
+    
+        crop_height = y_max - y_min 
+        crop_width = x_max - x_min 
+        
+        x_min2 = math.floor(x_min - (crop_width*fudgefactor))
+        x_max2 = math.ceil(x_max + (crop_width*fudgefactor))
+        y_min2 = math.floor(y_min - (crop_height*fudgefactor))
+        y_max2 = math.ceil(y_max + (crop_height*fudgefactor))
+    
+            
+        return x_min2,x_max2,y_min2,y_max2
+    
+    def nptostring(image_np):  #  64bit encode np image 
+        retval, nparr_crop = cv2.imencode(".JPEG", image_np)
+
+        img_blob_crop = np.array(nparr_crop).tostring()
+            
+        img_crop_base64 = base64.b64encode(img_blob_crop)
+        image_str = img_crop_base64.decode('utf-8')
+            
+        return image_str
+        
+    def nptoblob(image_np):  # convert np to blob 
+        # Convert the array to a BLOB
+        retval, buffer = cv2.imencode('.jpg', image_np)
+        return  buffer.tobytes()  # convert back to blob 
+    
+    
+    ncrops = 0 
+    
+    for i in range(0, int(float(numberOfObjects))):
+                
+        x = float(row['_Object' + str(i) + '_x'])
+        y = float(row['_Object' + str(i) + '_y'])
+        width = float(row['_Object' + str(i) + '_width'])
+        height = float(row['_Object' + str(i) + '_height'])
+        prob = float(row['_P_Object' + str(i) + '_'])
+        
+        rx_min = x - width  / 2
+        rx_max = x + width  / 2
+        ry_min = y - height / 2
+        ry_max = y + height / 2
+        
+        x_min = int(math.floor(image_w * rx_min))
+        x_max = int(math.ceil(image_w * rx_max))
+        y_min = int(math.floor(image_h * ry_min))
+        y_max = int(math.ceil(image_h * ry_max))
+        
+        x_min_org  = x_min
+        x_max_org  = x_max
+        y_min_org  = y_min
+        y_max_org  = y_max
+        
+        crop_height = y_max - y_min 
+        crop_width = x_max - x_min 
+        
+       # square up image and zoom out based on aspect ratio. 
+        aspectratio = 1 
+        if crop_width > 0 : # don't divide by 0 
+            aspectratio = crop_height / crop_width
+            
+        deltaY = math.floor(crop_height - crop_width) / 2 
+        y_max = y_min + (x_max - x_min )  # square image 
+        #  move down to center image 
+        y_min = y_min + deltaY
+        y_max = y_max + deltaY
+        # the closer the aspectratio is to 1 the less zooming out is needed 
+        fudge = .08  # the smaller the number the less zooming out 
+        fudge = ((aspectratio - 1 ) * fudge ) + fudge 
+        
+        
+        # CROP ORIGINAL IMAGE
+        x_min4,x_max4,y_min4,y_max4 = zoomout(x_min,x_max,y_min,y_max,fudge)
+        new_crop = img_np[y_min4:y_max4, x_min4:x_max4, ::-1]
+        
+        x_min3,x_max3,y_min3,y_max3 = zoomout(x_min,x_max,y_min,y_max,fudge+.15)
+        emotion_crop = img_np[y_min3:y_max3, x_min3:x_max3, ::-1]
+        
+        if (new_crop.size > 0) and (crop_width > 50) and (prob > .853 ):
+        # board_id, _genderage_image_, _image_, ncrops, _emotion_image_ , _RGB_image_"
+            ncrops = ncrops + 1 
+            e = {}  # create new event for each crop 
+            e["id"] = key 
+            e["board_id"] = ncrops
+            e["_nObjects_"] =_nObjects_
+            e["ncrops"] =ncrops
+            
+            
+            new_crop = cv2.resize(new_crop, (224, 224), cv2.INTER_LINEAR)
+            # draw bounding box
+            temp_image = np.copy(img_np)
+            
+            cv2.rectangle(temp_image, (x_min_org, y_min_org), (x_max_org, y_max_org), box_color, thickness=2)
+            e["_image_"]=nptoblob(temp_image)
+            
+            # emotion processing 
+            # emotion was trained with greyscale images so convert to gray for scoring. 
+            emotion_crop = cv2.resize(emotion_crop, (224, 224), cv2.INTER_LINEAR)
+            emotion_crop = cv2.cvtColor(emotion_crop,cv2.COLOR_BGR2GRAY)
+            
+            e["_emotion_image_"]= nptoblob(emotion_crop)  # convert back to blob 
+            
+            e["_genderage_image_"]= nptoblob(new_crop)
+            
+
+            RGB_crop = cv2.cvtColor(emotion_crop,cv2.COLOR_BGR2RGB)                       
+
+            e["_RGB_image_"]    = nptoblob(RGB_crop)
+                                    
+            events_list.append(e)  # add new event to event list 
+
+    return  
+    
+def create(data,context):
+    events = []
+    
+    crops_draw_bboxes(events,
+    data["id"],
+    data["_image_"],
+    data["_nObjects_"],
+    data["_Object0_x"],
+    data["_Object0_y"],
+    data["_Object0_width"],
+    data["_Object0_height"],
+    data["_P_Object0_"],
+    data["_Object1_x"],
+    data["_Object1_y"],
+    data["_Object1_width"],
+    data["_Object1_height"],
+    data["_P_Object1_"],
+    data["_Object2_x"],
+    data["_Object2_y"],
+    data["_Object2_width"],
+    data["_Object2_height"],
+    data["_P_Object2_"],
+    data["_Object3_x"],
+    data["_Object3_y"],
+    data["_Object3_width"],
+    data["_Object3_height"],
+    data["_P_Object3_"],
+    data["_Object4_x"],
+    data["_Object4_y"],
+    data["_Object4_width"],
+    data["_Object4_height"],
+    data["_P_Object4_"],
+    data["_Object5_x"],
+    data["_Object5_y"],
+    data["_Object5_width"],
+    data["_Object5_height"],
+    data["_P_Object5_"],
+    data["_Object6_x"],
+    data["_Object6_y"],
+    data["_Object6_width"],
+    data["_Object6_height"],
+    data["_P_Object6_"],
+    data["_Object7_x"],
+    data["_Object7_y"],
+    data["_Object7_width"],
+    data["_Object7_height"],
+    data["_P_Object7_"]
+    
+    )
+    
+
+    
+    return events
+
+]]></code>
+        </window-python>
+        <window-lua events="create" index="pi_EMPTY" name="Ready4Grafana">
+          <description><![CDATA[The image visualization in Grafana needs the BLOB converted to a B64 encoded string.  Is also requires "data:image/FORMAT;base64," be appended to the beginning of the string.]]></description>
+          <schema>
+            <fields>
+              <field name="id" type="int64" key="true"/>
+              <field name="board_id" type="int64" key="true"/>
+              <field name="_image_" type="blob"/>
+              <field name="B64_image" type="string"/>
+            </fields>
+          </schema>
+          <copy/>
+          <code><![CDATA[--[[--Created by anonymousUser at 11/28/2023, 3:02:33 PM--]]--
+function create(data,context)
+    local event = {}
+    event.id = data.id 
+    event.board_id = data.board_id
+    event.B64_image  = "data:image/FORMAT;base64,"..esp_b64Encode(data._image_)
+    return(event)
+end]]></code>
+        </window-lua>
+        <window-python events="create" index="pi_EMPTY" name="AnnotateImages">
+          <description><![CDATA[Draw bounding boxes on jpegs using opencv. 
+Write images to directory using Lua subscriber]]></description>
+          <schema>
+            <fields>
+              <field name="id" type="int64" key="true"/>
+              <field name="board_id" type="int64" key="true"/>
+              <field name="P__label_men" type="double"/>
+              <field name="P__label_women" type="double"/>
+              <field name="I__label_gender" type="string"/>
+              <field name="P__label_Age_1_5" type="double"/>
+              <field name="P__label_Age_12_17" type="double"/>
+              <field name="P__label_Age_18_20" type="double"/>
+              <field name="P__label_Age_21_24" type="double"/>
+              <field name="P__label_Age_25_34" type="double"/>
+              <field name="P__label_Age_35_44" type="double"/>
+              <field name="P__label_Age_45_54" type="double"/>
+              <field name="P__label_Age_55_64" type="double"/>
+              <field name="P__label_Age_6_11" type="double"/>
+              <field name="P__label_Age_65_71" type="double"/>
+              <field name="P__label_Age_72_100" type="double"/>
+              <field name="I__label_age" type="string"/>
+              <field name="P__label_Angry" type="double"/>
+              <field name="P__label_Fear" type="double"/>
+              <field name="P__label_Happy" type="double"/>
+              <field name="P__label_Neutral" type="double"/>
+              <field name="P__label_Sad" type="double"/>
+              <field name="P__label_Surprise" type="double"/>
+              <field name="I__label_emotion" type="string"/>
+              <field name="_image_" type="blob"/>
+              <field name="_RGB_image_" type="blob"/>
+              <field name="_genderage_image_" type="blob"/>
+              <field name="_emotion_image_" type="blob"/>
+            </fields>
+          </schema>
+          <copy/>
+          <code><![CDATA[import cv2
+import numpy as np
+
+
+font_face = cv2.FONT_HERSHEY_SIMPLEX
+font_scale = 0.6
+thickness = 1
+box_color = (5, 74, 153)[::-1]  # SAS Blue (b,g,r)
+counter = 0 
+
+
+def nptoblob(image_np):
+        # Convert the array to a BLOB
+        retval, buffer = cv2.imencode('.jpg', image_np)
+        return  buffer.tobytes()  # convert back to blob 
+
+def Image2Array(img):
+    np_arr = np.frombuffer(img, dtype=np.uint8)
+    img_np = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+    return img_np
+
+def addlabel(img_np,label,value,place):
+    
+    text = label.capitalize().rstrip() + '   ' + value.capitalize().rstrip()
+    
+    # Define a dictionary with the mappings
+    mappings = {
+      1: [20, 20],
+      2: [20, 40],
+      3: [20, 60]
+    }
+    
+    text_x , text_y  = mappings[place]
+    
+    
+    cv2.putText(
+                img_np,
+                text,
+                (text_x, text_y),
+                font_face,
+                font_scale,
+                box_color,
+                thickness,
+                cv2.LINE_AA,
+            )
+    
+    
+    return img_np
+
+
+def visualize(
+    _image_,
+    I__label_age,
+    I__label_gender,
+    I__label_emotion
+):
+    
+    img = Image2Array(_image_)  # convert to NP
+    img = addlabel(img,"Gender",I__label_gender,1)  # add 1st label
+    img = addlabel(img,"Age",I__label_age,2)  # add 1st label
+    img = addlabel(img,"Mood",I__label_emotion,3)  # add 1st label
+    
+    
+    
+    
+    # Convert the array to a BLOB
+    return nptoblob(img)  # convert back to blob 
+    
+def create(data,context):
+   
+    event = {}
+    event["id"] = data["id"]  
+    event["board_id"] = data["board_id"]
+    event["_image_"]=visualize(
+        data["_image_"],
+        data["I__label_age"],
+        data["I__label_gender"],
+        data["I__label_emotion"])
+    
+
+    
+    return event]]></code>
+          <connectors>
+            <connector class="lua" name="WriteResults" active="false">
+              <properties>
+                <property name="type"><![CDATA[sub]]></property>
+                <property name="code"><![CDATA[-- Function to create a directory without lfs
+-- this does not work because os.exxxxxecute is locked down by security 
+function createDirectory(path)
+   local value = path 
+   local hmmm = "execute"
+   local success, error_message = os[hmmm]("mkdir " .. path)
+   if success then
+        local message = "Directory created successfully"
+        esp_logMessage("logcontext",message,"info",debug.getinfo(1).currentline)
+    else
+        -- the python code created a dir and saved it as a property 
+        value , errormessage =  esp_getProperty({name="directory_path"})
+        print("Error creating directory: " .. error_message)
+    end
+    return value    
+end
+
+-- Example usage
+local directoryPath = "/data/espout"..esp_getSystemMicro()
+
+local newpath = createDirectory(directoryPath)
+
+function subscribe(events)
+   --[[-- + Enter your code here --]]--
+   for i,event in ipairs(events) do
+       filename = newpath.."/"..event.id..".jpg"
+       file = io.open(filename,"wb")
+       data = event._image_
+       file:write(data)
+       file:close()
+    end
+end]]></property>
+              </properties>
+            </connector>
+          </connectors>
+        </window-python>
+        <window-lua events="create" index="pi_EMPTY" name="TrackTotals">
+          <description><![CDATA[For the last 100 events sum the totals for all categories.  This summation is needed to support graphs in Grafana.]]></description>
+          <schema>
+            <fields>
+              <field name="key" type="string" key="true"/>
+              <field name="T_men" type="int64"/>
+              <field name="T_women" type="int64"/>
+              <field name="T_Age_1_5" type="int64"/>
+              <field name="T_Age_12_17" type="int64"/>
+              <field name="T_Age_18_20" type="int64"/>
+              <field name="T_Age_21_24" type="int64"/>
+              <field name="T_Age_25_34" type="int64"/>
+              <field name="T_Age_35_44" type="int64"/>
+              <field name="T_Age_45_54" type="int64"/>
+              <field name="T_Age_55_64" type="int64"/>
+              <field name="T_Age_6_11" type="int64"/>
+              <field name="T_Age_65_71" type="int64"/>
+              <field name="T_Age_72_100" type="int64"/>
+              <field name="T_Angry" type="int64"/>
+              <field name="T_Fear" type="int64"/>
+              <field name="T_Happy" type="int64"/>
+              <field name="T_Neutral" type="int64"/>
+              <field name="T_Sad" type="int64"/>
+              <field name="T_Surprise" type="int64"/>
+            </fields>
+          </schema>
+          <code><![CDATA[-- Store incoming data 
+local Ages = {}
+local Genders = {}
+local Moods = {}
+
+-- Function to add a new record to the table
+local function addRecord(T,record)
+    table.insert(T, record) -- insert to back of table
+    while #T > 100 do      -- Ensure the table size does not exceed 100
+        table.remove(T, 1)  -- Remove from front of table 
+    end
+end
+
+-- Function to strip leading and trailing whitespaces from a string
+local function stripWhitespaces(str)
+    return str:match("^%s*(.-)%s*$")
+end
+
+local function sumValues(event,records,outTable)
+    
+    for key, value in ipairs(records) do -- total last 100 records
+        local value2 = stripWhitespaces(value)
+        outTable[value2] = outTable[value2] + 1
+    end
+    
+    for key, value in pairs(outTable) do -- move totals to event schema 
+      local schemakey  = "T_"..key   
+      event[schemakey] = value
+    end
+return 
+end 
+
+function create(data,context)
+    
+local genderTable = {   -- table to track gender
+    ["men"] = 0,
+    ["women"] = 0
+}  
+local moodTable = {   -- table to track moods
+    ["Angry"] = 0,
+    ["Fear"] = 0,
+    ["Happy"] = 0,
+    ["Neutral"] = 0,
+    ["Sad"] = 0,
+    ["Surprise"] = 0
+}
+   
+local ageTable = {   -- table to track ages
+    ["Age_1_5"] = 0,
+    ["Age_6_11"] = 0,
+    ["Age_12_17"] = 0,
+    ["Age_18_20"] = 0,
+    ["Age_21_24"] = 0,
+    ["Age_25_34"] = 0,
+    ["Age_35_44"] = 0,
+    ["Age_45_54"] = 0,
+    ["Age_55_64"] = 0,
+    ["Age_65_71"] = 0,
+    ["Age_72_100"] = 0
+}
+    local event = {}
+    local guids = esp_getGuids(1)
+    event.key = guids[1] -- convert key to string for Grafana
+    -- keep last 100 records in state 
+    addRecord(Genders ,data["I__label_gender"])
+    addRecord(Ages,data["I__label_age"])
+    addRecord(Moods, data["I__label_emotion"])
+    
+    sumValues(event,Genders,genderTable)
+    sumValues(event,Ages,ageTable)
+    sumValues(event,Moods,moodTable)
+    
+    return(event)
+end]]></code>
+        </window-lua>
+      </windows>
+      <edges>
+        <edge source="resized416" target="facedetection" role="data"/>
+        <edge source="readtinyyolo416model" target="facedetection" role="model"/>
+        <edge source="VideoFromRTSP" target="resized416" role="data"/>
+        <edge source="readgendermodel" target="genderdetection" role="model"/>
+        <edge source="readagemodel" target="agedetection" role="model"/>
+        <edge source="reademotionmodel" target="emotiondetection" role="model"/>
+        <edge source="agedetection" target="genderdetection" role="data"/>
+        <edge source="genderdetection" target="emotiondetection" role="data"/>
+        <edge source="facedetection" target="cropfaces2"/>
+        <edge source="cropfaces2" target="agedetection" role="data"/>
+        <edge source="emotiondetection" target="AnnotateImages"/>
+        <edge source="AnnotateImages" target="Ready4Grafana"/>
+        <edge source="AnnotateImages" target="TrackTotals"/>
+      </edges>
+    </contquery>
+  </contqueries>
+</project>
