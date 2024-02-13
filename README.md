@@ -22,12 +22,9 @@ These two products provide the tools needed when training, testing and running c
   *  How to deploy the trained CV models using SAS ESP 
   *  How to present the demographic data effectively using a Grafana dashboard
 
-
 ## Use Case
 
-As the proprietor of a retail establishment, envision gaining a  better understand your customers. Imagine gaining insights into the emotional engagement of customers as they explore your store—knowing the demographic preferences for specific store aisles, distinguishing between male and female customer attractions. Wouldn't that be invaluable?  Using computer vision and streaming analytics it is possible to do this in real-time.  All that's required is a camera connected through RTSP, complemented by an object detection model pinpointing human faces, alongside image recognition models discerning additional details. The outcomes are gathered and channeled into a dashboard, enabling real-time analysis.
-
-
+As the proprietor of a retail establishment, envision gaining a better understanding of your customers. Imagine gaining insights into the emotional engagement of customers as they explore your store, knowing the demographic preferences for specific store aisles, distinguishing between male and female customer attractions. Wouldn't that be invaluable?  Using computer vision and streaming analytics it is possible to do this in real-time.  All that's required is a camera connected through RTSP, complemented by an object detection model pinpointing human faces, alongside image recognition models discerning additional details. The outcomes are gathered and channeled into a dashboard, enabling real-time analysis.
 
 ## Gathering and displaying demographic data: a retail example
 
