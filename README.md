@@ -4,7 +4,7 @@
 
 In this repository, you'll see how to connect to an RTSP stream of image data is transformed or enhanced in real-time to deliver demographic data.
 
-[TOC]
+
 
 ## Overview
 
